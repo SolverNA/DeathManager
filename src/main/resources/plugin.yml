@@ -1,0 +1,10 @@
+name: DeathManager
+version: '1.0'
+main: dev.solverNa.deathManager.DeathManager
+api-version: '1.21'
+softdepend: [ProtocolLib]
+commands:
+  deathmanager:
+    description: "Reload DeathManager config"
+    aliases: [dm]
+    permission: deathmanager.admin
