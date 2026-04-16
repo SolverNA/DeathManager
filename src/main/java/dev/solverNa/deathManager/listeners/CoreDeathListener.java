@@ -16,6 +16,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -23,6 +24,43 @@ import java.util.Random;
 public class CoreDeathListener implements Listener {
     private final DeathManager plugin;
     private final Random random = new Random();
+
+    private static Attribute MAX_HEALTH_ATTR;
+    private static Constructor<PlayerDeathEvent> deathEventConstructorComponent;
+    private static Constructor<PlayerDeathEvent> deathEventConstructorString;
+
+    static {
+        // Resolve Attribute
+        try {
+            MAX_HEALTH_ATTR = (Attribute) Attribute.class.getField("MAX_HEALTH").get(null);
+        } catch (Exception e) {
+            try {
+                MAX_HEALTH_ATTR = (Attribute) Attribute.class.getField("GENERIC_MAX_HEALTH").get(null);
+            } catch (Exception ignored) {}
+        }
+
+        // Resolve PlayerDeathEvent constructors
+        try {
+            deathEventConstructorComponent = PlayerDeathEvent.class.getConstructor(
+                Player.class,
+                org.bukkit.damage.DamageSource.class,
+                List.class,
+                int.class,
+                net.kyori.adventure.text.Component.class,
+                boolean.class
+            );
+        } catch (Exception ignored) {}
+
+        try {
+            deathEventConstructorString = PlayerDeathEvent.class.getConstructor(
+                Player.class,
+                org.bukkit.damage.DamageSource.class,
+                List.class,
+                int.class,
+                String.class
+            );
+        } catch (Exception ignored) {}
+    }
 
     public CoreDeathListener(DeathManager plugin) {
         this.plugin = plugin;
@@ -50,13 +88,10 @@ public class CoreDeathListener implements Listener {
         Settings settings = plugin.getSettings();
 
         // Restore
-        @SuppressWarnings("deprecation")
         double maxHealth = player.getMaxHealth();
-        try {
-            maxHealth = player.getAttribute(Attribute.valueOf("MAX_HEALTH")).getValue();
-        } catch (Exception e) {
+        if (MAX_HEALTH_ATTR != null) {
             try {
-                maxHealth = player.getAttribute(Attribute.valueOf("GENERIC_MAX_HEALTH")).getValue();
+                maxHealth = player.getAttribute(MAX_HEALTH_ATTR).getValue();
             } catch (Exception ignored) {}
         }
         player.setHealth(maxHealth);
@@ -99,7 +134,28 @@ public class CoreDeathListener implements Listener {
 
         // Fire fake event
         org.bukkit.damage.DamageSource damageSource = player.getLastDamageCause() != null ? player.getLastDamageCause().getDamageSource() : org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.GENERIC).build();
-        PlayerDeathEvent vanillaDeathEvent = new PlayerDeathEvent(player, damageSource, actualDrops, exp, player.getName() + " died.");
+        PlayerDeathEvent vanillaDeathEvent = null;
+
+        if (deathEventConstructorComponent != null) {
+            try {
+                vanillaDeathEvent = deathEventConstructorComponent.newInstance(
+                    player, damageSource, actualDrops, exp,
+                    net.kyori.adventure.text.Component.text(player.getName() + " died."), false
+                );
+            } catch (Exception ignored) {}
+        }
+        if (vanillaDeathEvent == null && deathEventConstructorString != null) {
+            try {
+                vanillaDeathEvent = deathEventConstructorString.newInstance(
+                    player, damageSource, actualDrops, exp, player.getName() + " died."
+                );
+            } catch (Exception ignored) {}
+        }
+        if (vanillaDeathEvent == null) {
+            // Absolute fallback for deeply divergent APIs (unlikely to happen on Paper 1.21.x+)
+            return;
+        }
+
         Bukkit.getPluginManager().callEvent(vanillaDeathEvent);
 
         Location deathLoc = player.getLocation();
