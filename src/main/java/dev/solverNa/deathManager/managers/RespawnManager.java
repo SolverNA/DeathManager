@@ -15,7 +15,7 @@ public class RespawnManager {
         this.plugin = plugin;
     }
 
-    public void startTimer(Player player, int timeSec, String title, String subtitle) {
+    public void startTimer(Player player, Location targetLoc, int timeSec, String title, String subtitle) {
         new BukkitRunnable() {
             int time = timeSec;
 
@@ -28,7 +28,7 @@ public class RespawnManager {
 
                 if (time <= 0) {
                     this.cancel();
-                    completeRespawn(player);
+                    completeRespawn(player, targetLoc);
                     return;
                 }
 
@@ -40,30 +40,12 @@ public class RespawnManager {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    public void completeRespawn(Player player) {
+    public void completeRespawn(Player player, Location targetLoc) {
         player.sendTitle("§aРЕСПАВН", "", 10, 40, 10);
         player.setGameMode(GameMode.SURVIVAL);
 
-        Location bedSpawn = player.getBedSpawnLocation();
-        Location worldSpawn = Bukkit.getWorlds().get(0).getSpawnLocation(); // default primary world
-        Location targetLoc = bedSpawn != null ? bedSpawn : worldSpawn;
-
-        @SuppressWarnings("deprecation")
-        PlayerRespawnEvent event = null;
-        try {
-            event = new PlayerRespawnEvent(player, targetLoc, bedSpawn != null, false, PlayerRespawnEvent.RespawnReason.PLUGIN);
-        } catch (Throwable e) {
-            try {
-                event = new PlayerRespawnEvent(player, targetLoc, bedSpawn != null, false);
-            } catch (Throwable e2) {
-                event = new PlayerRespawnEvent(player, targetLoc, bedSpawn != null);
-            }
-        }
-
-        if (event != null) {
-            Bukkit.getPluginManager().callEvent(event);
-            player.teleport(event.getRespawnLocation());
-        } else {
+        // the Player is already cleanly processed by Bukkit logic, just teleport them back to the calculated spawn location!
+        if (targetLoc != null) {
             player.teleport(targetLoc);
         }
     }
