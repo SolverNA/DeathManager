@@ -127,7 +127,7 @@ public class CoreDeathListener implements Listener {
                 plugin.getHologramManager().spawnHologram(deathLoc, player, killer, settings.hologramLines, settings.hologramDuration);
             }
 
-            if (settings.respawnTimerEnabled && settings.respawnTime > 0) {
+            if (settings.respawnTimerEnabled) {
                 plugin.getRespawnManager().startTimer(player, settings.respawnTime, settings.respawnTitle, settings.respawnSubtitle);
             }
         }
