@@ -6,7 +6,7 @@
 
     <groupId>dev.solverNa</groupId>
     <artifactId>DeathManager</artifactId>
-    <version>1.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>DeathManager</name>
