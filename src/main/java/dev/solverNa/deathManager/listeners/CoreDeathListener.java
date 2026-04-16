@@ -132,8 +132,6 @@ public class CoreDeathListener implements Listener {
 
         if (settings.respawnTimerEnabled && settings.respawnTime > 0) {
             plugin.getRespawnManager().startTimer(player, settings.respawnTime, settings.respawnTitle, settings.respawnSubtitle);
-        } else {
-            plugin.getRespawnManager().completeRespawn(player);
         }
     }
 
