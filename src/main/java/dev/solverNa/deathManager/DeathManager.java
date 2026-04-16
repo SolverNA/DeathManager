@@ -24,11 +24,17 @@ public final class DeathManager extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CoreDeathListener(this), this);
         getLogger().info("DeathManager activated! Ready to manage minigame fatalities.");
 
+        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+            setupProtocolLib();
+        } else {
+            getLogger().info("ProtocolLib not found. Hardcore hearts will not be used.");
+        }
+    }
+
+    private void setupProtocolLib() {
         ProtocolManagerHook protocolHook = new ProtocolManagerHook(this);
         if (protocolHook.init()) {
             getLogger().info("ProtocolLib found! Hardcore hearts will be supported if enabled.");
-        } else {
-            getLogger().info("ProtocolLib not found. Hardcore hearts will not be used.");
         }
     }
 
