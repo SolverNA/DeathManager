@@ -1,9 +1,12 @@
 package dev.solverNa.deathManager.managers;
 
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.Bukkit;
 
 public class RespawnManager {
     private final Plugin plugin;
@@ -24,10 +27,8 @@ public class RespawnManager {
                 }
 
                 if (time <= 0) {
-                    player.sendTitle("§aРЕСПАВН", "", 10, 40, 10);
-                    player.setGameMode(GameMode.SURVIVAL);
-                    // Add logic to teleport to spawn if needed
                     this.cancel();
+                    completeRespawn(player);
                     return;
                 }
 
@@ -37,5 +38,33 @@ public class RespawnManager {
                 time--;
             }
         }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    public void completeRespawn(Player player) {
+        player.sendTitle("§aРЕСПАВН", "", 10, 40, 10);
+        player.setGameMode(GameMode.SURVIVAL);
+
+        Location bedSpawn = player.getBedSpawnLocation();
+        Location worldSpawn = Bukkit.getWorlds().get(0).getSpawnLocation(); // default primary world
+        Location targetLoc = bedSpawn != null ? bedSpawn : worldSpawn;
+
+        @SuppressWarnings("deprecation")
+        PlayerRespawnEvent event = null;
+        try {
+            event = new PlayerRespawnEvent(player, targetLoc, bedSpawn != null, false, PlayerRespawnEvent.RespawnReason.PLUGIN);
+        } catch (Throwable e) {
+            try {
+                event = new PlayerRespawnEvent(player, targetLoc, bedSpawn != null, false);
+            } catch (Throwable e2) {
+                event = new PlayerRespawnEvent(player, targetLoc, bedSpawn != null);
+            }
+        }
+
+        if (event != null) {
+            Bukkit.getPluginManager().callEvent(event);
+            player.teleport(event.getRespawnLocation());
+        } else {
+            player.teleport(targetLoc);
+        }
     }
 }
