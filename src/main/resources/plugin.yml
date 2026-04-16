@@ -1,5 +1,5 @@
 name: DeathManager
-version: '1.0.3'
+version: '1.0.4'
 main: dev.solverNa.deathManager.DeathManager
 api-version: '1.21'
 softdepend: [ProtocolLib]
